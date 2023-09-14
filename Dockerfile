@@ -10,6 +10,7 @@ ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 DEBIAN_FRONTEND=nonint
 ARG ONLYOFFICE_VALUE=onlyoffice
 
 RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
+    sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
     apt-get -y update && \
     apt-get -yq install wget apt-transport-https gnupg locales lsb-release && \
     locale-gen en_US.UTF-8 && \
@@ -49,7 +50,10 @@ RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
         supervisor \
         ttf-mscorefonts-installer \
         xvfb \
-        zlib1g && \
+        zlib1g \
+	vim \
+	php-fpm \
+	php-curl && \
     if [  $(ls -l /usr/share/fonts/truetype/msttcorefonts | wc -l) -ne 61 ]; \
         then echo 'msttcorefonts failed to download'; exit 1; fi  && \
     echo "SERVER_ADDITIONAL_ERL_ARGS=\"+S 1:1\"" | tee -a /etc/rabbitmq/rabbitmq-env.conf && \
@@ -96,7 +100,18 @@ RUN PACKAGE_FILE="${COMPANY_NAME}-${PRODUCT_NAME}${PRODUCT_EDITION}${PACKAGE_VER
     chmod 755 /app/ds/*.sh && \
     rm -f /tmp/$PACKAGE_FILE && \
     rm -rf /var/log/$COMPANY_NAME && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \ 
+#    rm -rf /var/www/onlyoffice/documentserver/{core-fonts,fonts,sdkjs,sdkjs-plugins,web-apps}
+    rm -rf /var/www/onlyoffice/documentserver/core-fonts && \
+    rm -rf /var/www/onlyoffice/documentserver/fonts && \
+    rm -rf /var/www/onlyoffice/documentserver/sdkjs && \
+    rm -rf /var/www/onlyoffice/documentserver/sdkjs-plugins && \
+    rm -rf /var/www/onlyoffice/documentserver/web-apps
+
+COPY officeData/web/ /var/www/onlyoffice/documentserver/
+COPY Fonts/ /var/www/onlyoffice/documentserver/core-fonts/
+COPY nginx/ds-kod-include.conf /etc/nginx/includes/
+COPY nginx/ds-kod-server.conf /etc/nginx/conf.d/
 
 VOLUME /var/log/$COMPANY_NAME /var/lib/$COMPANY_NAME /var/www/$COMPANY_NAME/Data /var/lib/postgresql /var/lib/rabbitmq /var/lib/redis /usr/share/fonts/truetype/custom
 

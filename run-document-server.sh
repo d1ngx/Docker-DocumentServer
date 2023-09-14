@@ -76,7 +76,7 @@ NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-1}
 # Limiting the maximum number of simultaneous connections due to possible memory shortage
 [ $(ulimit -n) -gt 1048576 ] && NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-1048576} || NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-$(ulimit -n)}
 
-JWT_ENABLED=${JWT_ENABLED:-true}
+JWT_ENABLED=${JWT_ENABLED:-false}
 
 # validate user's vars before usinig in json
 if [ "${JWT_ENABLED}" == "true" ]; then
@@ -111,6 +111,7 @@ JSON_BIN=${APP_DIR}/npm/json
 JSON="${JSON_BIN} -q -f ${ONLYOFFICE_DEFAULT_CONFIG}"
 JSON_LOG="${JSON_BIN} -q -f ${ONLYOFFICE_LOG4JS_CONFIG}"
 JSON_EXAMPLE="${JSON_BIN} -q -f ${ONLYOFFICE_EXAMPLE_CONFIG}"
+JSON_DEFAULT="${JSON_BIN} -q -f /etc/onlyoffice/documentserver/default.json"
 
 LOCAL_SERVICES=()
 
@@ -330,6 +331,17 @@ update_ds_settings(){
 
   ${JSON} -I -e "this.services.CoAuthoring.token.inbox.inBody = ${JWT_IN_BODY}"
   ${JSON} -I -e "this.services.CoAuthoring.token.outbox.inBody = ${JWT_IN_BODY}"
+
+  ${JSON_DEFAULT} -I -e "this.services.CoAuthoring.server.savetimeoutdelay = 5000"
+  ${JSON_DEFAULT} -I -e "this.services.CoAuthoring.server.limits_tempfile_upload = 504857600"
+
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.downloadTimeout.connectionAndInactivity = '10m'"
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.downloadTimeout.wholeCycle = '10m'"
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.idownloadAttemptMaxCount = 10"
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.inputLimits[0].zip.uncompressed = '500MB'"
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.inputLimits[1].zip.uncompressed = '500MB'"
+  ${JSON_DEFAULT} -I -e "this.FileConverter.converter.inputLimits[2].zip.uncompressed = '500MB'"
+  ${JSON_DEFAULT} -I -e "this.services.CoAuthoring['request-filtering-agent'].allowPrivateIPAddress = true"
 
   if [ -f "${ONLYOFFICE_EXAMPLE_CONFIG}" ]; then
     ${JSON_EXAMPLE} -I -e "this.server.token.enable = ${JWT_ENABLED}"
@@ -649,6 +661,7 @@ fi
 documentserver-static-gzip.sh ${ONLYOFFICE_DATA_CONTAINER}
 
 echo "${JWT_MESSAGE}" 
+service php8.1-fpm restart
 
 tail -f /var/log/${COMPANY_NAME}/**/*.log &
 wait $!

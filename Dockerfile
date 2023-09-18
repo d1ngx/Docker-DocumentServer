@@ -108,10 +108,11 @@ RUN PACKAGE_FILE="${COMPANY_NAME}-${PRODUCT_NAME}${PRODUCT_EDITION}${PACKAGE_VER
     rm -rf /var/www/onlyoffice/documentserver/sdkjs-plugins && \
     rm -rf /var/www/onlyoffice/documentserver/web-apps
 
-COPY officeData/web/ /var/www/onlyoffice/documentserver/
-COPY Fonts/ /var/www/onlyoffice/documentserver/core-fonts/
+COPY --chown=109:111 officeData/web/ /var/www/onlyoffice/documentserver/
+COPY --chown=109:111 Fonts/ /var/www/onlyoffice/documentserver/core-fonts/
 COPY nginx/ds-kod-include.conf /etc/nginx/includes/
 COPY nginx/ds-kod-server.conf /etc/nginx/conf.d/
+#COPY --chown=109:111 backups/docservice /var/www/onlyoffice/documentserver/server/DocService/
 
 VOLUME /var/log/$COMPANY_NAME /var/lib/$COMPANY_NAME /var/www/$COMPANY_NAME/Data /var/lib/postgresql /var/lib/rabbitmq /var/lib/redis /usr/share/fonts/truetype/custom
 
